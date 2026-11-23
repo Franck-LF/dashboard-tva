@@ -1,0 +1,85 @@
+
+
+[data-testid="stSidebarCollapseButton"] {
+	display: none
+}
+
+[data-testid="stSidebarHeader"] {
+    height: 2px;
+}
+
+/* Bannière */
+.banner {
+    background: linear-gradient(90deg, #d1bb78, rgb(229, 193, 178));
+    padding: 5px;
+    border-radius: 8px;
+    text-align: right;
+    color: rgb(0, 0, 0);
+    font-size: 46px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+/* Pour supprimer les espace autour de tous les blocs */
+div.block-container {
+    padding-top: 0rem;
+    padding-bottom: 0rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
+}
+
+/* Info */
+[data-testid="stAlert"] {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    border-radius: 12px;
+    border: 2px solid #d0d5dd;
+}
+
+/* Texte du bloc */
+[data-testid="stAlert"] p {
+    color: #26364a !important;
+}
+
+/* KPI (les indicateurs du récap) */
+.kpi-card {
+    background: rgba(255, 255, 255, 0.58);
+    border-radius: 12px;
+    padding: 10px;
+    text-align: center;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+    border: 1px solid rgba(255,255,255,0.8);
+    min-height: 115px;
+    border-left: 8px solid rgb(242, 207, 191, 0.5);
+}
+
+.kpi-title {
+    font-size: 28px;
+    color: #52647a;
+    font-weight: 600;
+}
+
+.kpi-value {
+    font-size: 30px;
+    font-weight: 350;
+    color: #183b65;
+    margin-top: 10px;
+}
+
+.kpi-icon {
+    font-size: 22px;
+}
+
+.kpi-subtitle {
+    font-size: 16px;
+    color: #16834b;
+    margin-top: 5px;
+}
+
+/* Couleur du texte */
+[data-testid="stMain"] p,
+[data-testid="stMain"] label,
+[data-testid="stMain"] h1,
+[data-testid="stMain"] h2,
+[data-testid="stMain"] h3 {
+    color: #172b4d;
+}
