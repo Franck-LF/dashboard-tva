@@ -13,6 +13,7 @@ Ne passez à l'étape suivante que quand la vérification de l'étape en cours e
 import pandas as pd
 import plotly.express as px  # noqa: F401 — servira aux étapes 2 et 4, ne pas supprimer
 import streamlit as st
+import base64
 
 def time_to_str(tps):
     h = tps // 3600000
@@ -79,6 +80,28 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+logo_base64 = None
+with open("IMAGES/logo.png", "rb") as f:
+    logo_base64 = base64.b64encode(f.read()).decode()
+
+st.markdown(f"""
+<div class="banner">
+    <img src="data:image/png;base64,{logo_base64}"
+         width="48"
+         alt="Crédit Agricole Logo">
+    Qualité du référentiel TVA  
+</div>
+
+""", unsafe_allow_html=True)
+
+# Function to load custom CSS
+def local_css(file_name):
+    with open(file_name) as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+# Load the CSS file
+local_css(""".streamlit/assets/style.css""")
+
 # Déjà écrit pour vous. @st.cache_data évite de relire le fichier à chaque clic.
 @st.cache_data
 def charger_donnees():
@@ -106,22 +129,99 @@ df = charger_donnees()
 # =============================================================================
 # ÉTAPE 3 — Les filtres (à faire APRÈS les étapes 1 et 2)
 # =============================================================================
-st.sidebar.header("Filtres")
 
-# Exemple déjà écrit : le filtre pays. Une liste vide veut dire « tous les pays ».
-pays = st.sidebar.multiselect("Pays déclaré", sorted(df["pays_declare"].unique()))
 
-# TODO FILTRE_CANAL (étape 3a) : sur le même modèle, un filtre « Canal de saisie » sur la colonne source_saisie.
-canal = st.sidebar.multiselect("Canal de saisie", sorted(df["source_saisie"].unique()))
+with st.sidebar:
+    st.markdown("""<h1>⚙️ Filtres</h1>""", unsafe_allow_html=True)
 
-# TODO FILTRE_PERIODE (étape 3b) : un filtre « Période de saisie » avec st.sidebar.slider (voir le brief).
-debut, fin = st.sidebar.slider(
-    "Période de saisie",
-    min_value=df["date_saisie"].min().date(),
-    max_value=df["date_saisie"].max().date(),
-    value=(df["date_saisie"].min().date(), df["date_saisie"].max().date()),
-    format="DD/MM/YYYY",
-)
+    # Exemple déjà écrit : le filtre pays. Une liste vide veut dire « tous les pays ».
+    pays = st.sidebar.multiselect(
+        "Pays déclaré", 
+        sorted(df["pays_declare"].unique()),
+        help=("Filtre par pays.")
+    )
+
+    # TODO FILTRE_CANAL (étape 3a) : sur le même modèle, un filtre « Canal de saisie » sur la colonne source_saisie.
+    canal = st.sidebar.multiselect(
+        "Canal de saisie", 
+        sorted(df["source_saisie"].unique()),
+        help=("Filtre par source")
+    )
+
+    # TODO FILTRE_PERIODE (étape 3b) : un filtre « Période de saisie » avec st.sidebar.slider (voir le brief).
+    debut, fin = st.sidebar.slider(
+        "Période de saisie",
+        min_value=df["date_saisie"].min().date(),
+        max_value=df["date_saisie"].max().date(),
+        value=(df["date_saisie"].min().date(), df["date_saisie"].max().date()),
+        format="DD/MM/YYYY",
+    )
+
+    radio_background = st.radio(
+        "Changer le fond d'écran :", ["Jaune", "Bleu"],
+        help=("Faire la recherche dans le titre uniquement ou bien dans le contenu du document."),
+        index = 0, horizontal = True)
+
+    radio_card = st.radio(        
+        "Changer l'apparence de la synthèse :", ["Initial", "Custom"],
+        index = 0, horizontal = True)
+
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        couleur_debut = st.color_picker(
+            "Début",
+            "#e2e387",
+            label_visibility="collapsed"
+        )
+
+    with col2:
+        couleur_fin = st.color_picker(
+            "Fin",
+            "#e5c1b2",
+            label_visibility="collapsed"
+        )
+        
+    st.markdown(f"""
+        <style>
+        [data-testid="stSidebar"] {{
+            background: linear-gradient(
+                180deg,
+                {couleur_debut},
+                {couleur_fin}
+            );
+        }}
+        </style>
+    """, unsafe_allow_html=True)
+
+image_base64 = None
+
+if radio_background == "Jaune":
+    with open("IMAGES/20449.jpg", "rb") as f:
+        image_base64 = base64.b64encode(f.read()).decode()
+
+elif radio_background == "Bleu":
+    with open("IMAGES/12441.jpg", "rb") as f:
+        image_base64 = base64.b64encode(f.read()).decode()
+
+# Injection du CSS
+st.markdown(f"""
+<style>
+
+.stApp {{
+    background:
+        linear-gradient(
+                rgba(255, 255, 255, 0.45),
+                rgba(255, 255, 255, 0.45)
+            ),
+        url("data:image/jpeg;base64,{image_base64}")
+        no-repeat center center fixed;
+    background-size: cover;
+}}
+
+</style>
+""", unsafe_allow_html=True)
+
 
 # `selection` contient les lignes qui passent les filtres. Toute la suite utilise
 # `selection`, jamais `df` : c'est ce qui fait réagir la page aux filtres.
@@ -141,9 +241,7 @@ selection = selection[selection["date_saisie"].dt.date.between(debut, fin)]
 
 # ======================================================================================================
 
-st.title("Qualité du référentiel TVA")
-
-synthese, _, erreurs, a_traiter, delais = st.tabs(["📋 Synthèse", "📊 Etape1", "🔍 Erreurs", "🎯 À traiter", "⏱️ Délais"], on_change="rerun")
+synthese, erreurs, a_traiter, delais = st.tabs(["📊 Synthèse", "🔍 Erreurs", "🎯 À traiter", "⏱️ Délais"], on_change="rerun")
 
 with synthese:
     # =============================================================================
@@ -163,29 +261,58 @@ with synthese:
     - non_tranche : VIES n'a pas pu répondre (service du pays indisponible, délai dépassé). Ce n'est ni valide ni invalide
     """, icon="ℹ️")
 
-    st.markdown(
-        """
-        <h1 style="color: red;">Bonjour</h1>
-        <p>Ceci est un <b>test HTML</b>.</p>
-        <p style="color: blue;">Texte en bleu</p>
-        """,
-        unsafe_allow_html=True
-    )
 
     # =============================================================================
     # ÉTAPE 1 — Les quatre chiffres clés
     # =============================================================================
-    total = len(selection)
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Numéros", total)
     # TODO CHIFFRES (étape 1) : dans col2, col3 et col4, le nombre de valides, d'invalides et de non tranchés,
     #          chacun avec son pourcentage du total.
+
+    total = len(selection)
     valides = (selection["statut"] == "valide").sum()
-    col2.metric("Valides", valides, f"{valides / total:.1%} du total", delta_color="green")
     invalides = (selection["statut"] == "invalide").sum()
-    col3.metric("Invalides", invalides, f"{invalides / total:.1%} du total", delta_color="red")
     non_tranches = (selection["statut"] == "non_tranche").sum()
-    col4.metric("Non tranchés", non_tranches, f"{non_tranches / total:.1%} du total", delta_color="blue")
+
+    if radio_card == "Custom":
+        with col1:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-title">Total</div>
+                <div class="kpi-value">📊 {total}</div>
+                <div class="kpi-subtitle">&nbsp;</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with col2:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-title">Valides</div>
+                <div class="kpi-value">🟢 {valides}</div>
+                <div class="kpi-subtitle">{valides / total:.1%} du total</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with col3:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-title">Invalides</div>
+                <div class="kpi-value">🔴 {invalides}</div>
+                <div class="kpi-subtitle">{invalides / total:.1%} du total</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with col4:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-title">Non tranchés</div>
+                <div class="kpi-value">⚖️ {non_tranches}</div>
+                <div class="kpi-subtitle">{non_tranches / total:.1%} du total</div>
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        col1.metric("Numéros", total)
+        col2.metric("Valides", valides, f"{valides / total:.1%} du total", delta_color="green")
+        col3.metric("Invalides", invalides, f"{invalides / total:.1%} du total", delta_color="red")
+        col4.metric("Non tranchés", non_tranches, f"{non_tranches / total:.1%} du total", delta_color="blue")
+
 
     # =============================================================================
     # ÉTAPE 2 — L'entonnoir
@@ -259,11 +386,6 @@ with a_traiter:
         file_name="numeros_a_traiter.csv",
         icon=":material/download:",
     )
-
-# Déjà écrit : les données brutes, cachées par défaut.
-# with st.expander("Voir toutes les données"):
-#     st.dataframe(selection, hide_index=True)
-
 
 with delais:
     # =============================================================================
